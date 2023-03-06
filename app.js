@@ -193,13 +193,14 @@ function onlyImgTpl(pics) {
  * 循环：消息体
  * @param {Object} messageData 对象
  */
-function messageTpl(messageData) {
+//加了个参数
+function messageTpl(messageData, i) {
     var user = messageData.user;
     var content = messageData.content;
     var reply = messageData.reply;
     var htmlText = [];
 
-    htmlText.push("<div class=\"moments-item\" data-index=\"0\">");//设置索引
+    htmlText.push(`<div class=\"moments-item\" data-index="${i}">`);//设置索引
 
     // 消息用户头像
     htmlText.push("<a class=\"item-left\" href=\"#\">");
@@ -241,7 +242,12 @@ function messageTpl(messageData) {
     htmlText.push("<div class=\"item-reply-touchUp\">");//点赞的触摸区域
     htmlText.push("<div class=\"icon-like\">" + "</div>");
 
-    htmlText.push("<div class=\"item-reply-iconName\">" + up + "</div>");//点赞or取消
+    if (data[i].reply.hasLiked) {
+        up[i] = '取消'
+    } else {
+        up[i] = '点赞'
+    }
+    htmlText.push("<div class=\"item-reply-iconName\">" + up[i] + "</div>");//点赞or取消
     htmlText.push("</div>");
     htmlText.push("<div class=\"item-reply-touchComment\">");//评论的触摸区域
     htmlText.push("<div class=\"icon-comment\">" + "</div>");
@@ -268,50 +274,80 @@ function render() {
     var messageHtml = "";
     // TODO: 这应该是一个for循环
     for (var i = 0; i < data.length; i++) {
-        messageHtml += messageTpl(data[i]);
+        messageHtml += messageTpl(data[i], i);
     }
     $momentsList.html(messageHtml);
 }
 
 
 function replyPopup() {
+    // $(document).click(function () {
+    //     $('.moments-item').find(".item-reply-bg").css("margin-right", "")
+    // })
+    // $('.item-reply').click(function () {
+    //     var index = $(this).parent().parent().parent().parent().index()
+    //     var itemreplybg = $(".moments-item").eq(index).find(".item-reply-bg")
+    //     if (itemreplybg.css("margin-right") == "38px") {
+    //         $(itemreplybg).css("margin-right", "")
+    //     } else {
+    //         $(itemreplybg).css("margin-right", "38px")
+    //     }
+    //     $('.moments-item').eq(index).siblings().find(".item-reply-bg").css("margin-right", "")
+    //     return false
+    // })
     $(document).click(function () {
-        $('.moments-item').find(".item-reply-bg").css("margin-right", "")
+        $('.moments-item').find(".item-reply-bg").css("margin-right", "");
     })
     $('.item-reply').click(function () {
-        var index = $(this).parent().parent().parent().parent().index()
-        var itemreplybg = $(".moments-item").eq(index).find(".item-reply-bg")
+        var index = parseInt($(this).parents(".moments-item")[0].getAttribute("data-index"));
+        var itemreplybg = $(".moments-item").eq(index).find(".item-reply-bg");
         if (itemreplybg.css("margin-right") == "38px") {
-            $(itemreplybg).css("margin-right", "")
+            $(itemreplybg).css("margin-right", "");
         } else {
-            $(itemreplybg).css("margin-right", "38px")
+            $(itemreplybg).css("margin-right", "38px");
         }
-        $('.moments-item').eq(index).siblings().find(".item-reply-bg").css("margin-right", "")
-        return false
+        $('.moments-item').eq(index).siblings().find(".item-reply-bg").css("margin-right", "");
+        return false;
     })
 }
 
-var up = '点赞'
+var up = [];
 
 function touchUp() {
+    // $('.item-reply-touchUp').click(function () {
+    //     var touchup = $(this).find(".item-reply-iconName")[0]
+    //     var touchupindex = $(this).parent().parent().parent().parent().index()
+    //     var arr = data[touchupindex].reply.likes;
+    //     var like = data[touchupindex].reply.hasLiked;
+    //     if (touchup.innerHTML == "点赞") {
+    //         touchup.innerHTML = "取消"
+    //         up = '取消'
+    //         arr.push(userName);
+    //         data[touchupindex].reply.hasLiked = false
+    //     } else {
+    //         touchup.innerHTML = "点赞"
+    //         up = '点赞'
+    //         data[touchupindex].reply.hasLiked = true
+    //         arr.splice(arr.length - 1);
+    //     }
+    //     init();
+    // })
+
     $('.item-reply-touchUp').click(function () {
-        var touchup = $(this).find(".item-reply-iconName")[0]
-        var touchupindex = $(this).parent().parent().parent().parent().index()
+        var touchupindex = parseInt($(this).parents(".moments-item")[0].getAttribute("data-index"));
+        // console.log(touchupindex);
         var arr = data[touchupindex].reply.likes;
         var like = data[touchupindex].reply.hasLiked;
-        if (touchup.innerHTML == "点赞") {
-            touchup.innerHTML = "取消"
-            up = '取消'
-            arr.push(userName);
-            data[touchupindex].reply.hasLiked = false
-        } else {
-            touchup.innerHTML = "点赞"
-            up = '点赞'
-            data[touchupindex].reply.hasLiked = true
+        if (like) {
             arr.splice(arr.length - 1);
+            data[touchupindex].reply.hasLiked = false;
+        } else {
+            arr.push(userName);
+            data[touchupindex].reply.hasLiked = true;
         }
         init();
     })
+
 }
 
 /**
@@ -320,49 +356,66 @@ function touchUp() {
 var commentindex;
 
 function touchComment() {
-    $('.item-reply-touchComment').click(function () {
-        $('.review-box-Shell').show()
-        commentindex = $(this).parent().parent().parent().parent().index()
+    $('.item-reply-touchComment').click(function (e) {
+        $('.review-box-Shell').show();
+        $('.moments-list').css('padding-bottom', '30px');
+        commentindex = parseInt($(this).parents(".moments-item")[0].getAttribute("data-index"));
+        return false;
+    })
+    $(document).click(function (e) {
+        $('.review-box-Shell').hide();
+        $('.moments-list').css('padding-bottom', '0px');
+    })
+    $('.review-box-Shell').click(function (e) {
+        $('.review-box-Shell').show();
+        $('.moments-list').css('padding-bottom', '30px');
+        return false;
     })
 
 }
 
 //发送按钮点击后触发的事件
 function sentMsg() {
-    var reviewboxinput = document.querySelector(".review-box-input")
+    var reviewboxinput = document.querySelector(".review-box-input");
     $('.review-box-sent').click(function () {
-        if (document.querySelector(".review-box-sent").style.background == "green" && reviewboxinput.value) {
-            ///console.log(reviewboxinput.value)
-            data[commentindex].reply.comments.push({author: userName, text: reviewboxinput.value})
-            $('.review-box-Shell').hide()
-            reviewboxinput.value = ''
+        if(reviewboxinput.value){
+            data[commentindex].reply.comments.push({author: userName, text: reviewboxinput.value});
+            $('.moments-list').css('padding-bottom', '0px');
+            $('.review-box-Shell').hide();
+            reviewboxinput.value = '';
+            var reviewboxsent = document.querySelector(".review-box-sent");
+            reviewboxsent.style.background = "gray";
+            init();
+            return false;
         }
-        init();
     })
 }
 
 //监听评论发送按钮的状态
 function listenInput() {
-    var reviewboxinput = document.querySelector(".review-box-input")
+    var reviewboxinput = document.querySelector(".review-box-input");
     reviewboxinput.addEventListener('input', function () {
         //console.log(reviewboxinput.value)
-        var reviewboxsent = document.querySelector(".review-box-sent")
+        var reviewboxsent = document.querySelector(".review-box-sent");
+        console.log("22");
         if (reviewboxinput.value) {
-            reviewboxsent.style.background = "green"
+            reviewboxsent.style.background = "green";
         } else {
-            reviewboxsent.style.background = "gray"
+            reviewboxsent.style.background = "gray";
         }
+
     })
+
 }
 
 //图片点击
 function touchImg() {
     $('.pic-item,.item-only-img').click(function () {
-        $(".bg-img-out").show()
-        $(".bg-img").css("background-image", `url("${$(this)[0].src}")`)
+        $(".bg-img-out").show();
+        $(".bg-img").css("background-image", `url("${$(this)[0].src}")`);
         $('.bg-img-out').click(function () {
-            $(".bg-img-out").hide()
-            $(".bg-img").css("background-image", `url("")`)
+            $(".bg-img-out").hide();
+            $(".bg-img").css("background-image", `url("")`);
         })
     })
 }
